@@ -13,10 +13,6 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
-    "types": [
-      "@testing-library/jest-dom"
-    ],
     "plugins": [
       {
         "name": "next"
