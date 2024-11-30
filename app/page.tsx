@@ -1,52 +1,73 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-import "./../app/app.css";
-import { Amplify } from "aws-amplify";
-import outputs from "@/amplify_outputs.json";
-import "@aws-amplify/ui-react/styles.css";
+import { useState } from 'react';
+import DatePicker from './components/DatePicker';
+import ButtonGrid from './components/ButtonGrid';
+import NotesField from './components/NotesField';
+import RecordButton from './components/RecordButton';
 
-Amplify.configure(outputs);
+export default function HomePage() {
+  const localDateTime = () => {
+    const now = new Date();
 
-const client = generateClient<Schema>();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
 
-export default function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-  function listTodos() {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
-  useEffect(() => {
-    listTodos();
-  }, []);
+  const numberOfButtons = 30;
+  const [counts, setCounts] = useState<number[]>(Array(numberOfButtons).fill(0));
+  const [date, setDate] = useState<string>(localDateTime());
+  const [notes, setNotes] = useState<string>('');
 
-  function createTodo() {
-    client.models.Todo.create({
-      content: window.prompt("Todo content"),
+  const handleIncrement = (index: number) => {
+    setCounts((prev) => {
+      const newCounts = [...prev];
+      newCounts[index]++;
+      return newCounts;
     });
-  }
+  };
+
+  const handleDecrement = (index: number) => {
+    setCounts((prev) => {
+      const newCounts = [...prev];
+      if (newCounts[index] > 0) newCounts[index]--;
+      return newCounts;
+    });
+  };
+
+  const handleReset = () => {
+    setCounts(Array(numberOfButtons).fill(0));
+    setNotes('');
+    setDate(localDateTime());
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Prevent default form submission behavior
+
+    // Capture form data
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const entries = Object.fromEntries(data.entries());
+
+    //alert(`Submitted Data:\n${JSON.stringify(entries, null, 2)}`);
+    handleReset();
+  };
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/">
-          Review next steps of this tutorial.
-        </a>
-      </div>
-    </main>
+    <div className="container grid-container">
+      <form id="dataForm" onSubmit={handleSubmit}>
+        <div className="row g-2">
+        <DatePicker date={date} setDate={setDate} />
+        <ButtonGrid counts={counts} onIncrement={handleIncrement} onDecrement={handleDecrement} />
+        <NotesField notes={notes} setNotes={setNotes} />
+        <RecordButton />
+        </div>
+      </form>
+    </div>
   );
 }
